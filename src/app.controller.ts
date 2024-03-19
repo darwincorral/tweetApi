@@ -63,4 +63,33 @@ export class AppController {
       throw error;
     }
   }
+
+  
+  @Get('facebookUserPosts/:userId')
+  async getUserFacebookPosts(@Param('userId') userId: string): Promise<any> {
+    try {
+      // Establecer el token de acceso
+      FB.setAccessToken('YOUR_TOKEN'); 
+
+      // Crear una promesa para envolver la llamada a FB.api()
+      const postsPromise = new Promise<any>((resolve, reject) => {
+        FB.api(`${userId}/posts`, 'get', (res) => {
+          if (!res || res.error) {
+            console.error(!res ? 'Error occurred' : res.error);
+            reject(!res ? 'Error occurred' : res.error);
+          } else {
+            console.log('User Posts:', res);
+            resolve(res);
+          }
+        });
+      });
+
+      // Esperar a que se resuelva la promesa y devolver los posts del usuario
+      return await postsPromise;
+    } catch (error) {
+      // Manejar errores
+      console.error('Error al obtener los posts del usuario:', error);
+      throw error;
+    }
+  }
 }
