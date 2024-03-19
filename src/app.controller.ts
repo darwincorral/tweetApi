@@ -1,12 +1,14 @@
-import { Controller, Get} from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { TwitterApi } from 'twitter-api-v2';
+import { FB } from 'fb';
+import * as fs from 'fs';
 
-@Controller('tweets')
+@Controller('socialNetworks')
 export class AppController {
+  constructor() {}
+  textPost = `😎 Publicado desde NEST JS!!!! 💀`;
 
-  constructor() { }
-
-  @Get()
+  @Get('twitterPost')
   async getPostTweet() {
     try {
       // Crear el cliente de Twitter
@@ -17,16 +19,12 @@ export class AppController {
         accessSecret: 'YOUR_ACCES_SECRET',
       });
 
-      
       // Subir la imagen
       const mediaId = await client.v1.uploadMedia('./test.jpg');
 
-      // Texto del tweet
-      const tweetText = `Estoy en twitter fu**ck 😎\nPublicado desde NEST JS!!!! 💀`;
-
       // Publicar el tweet
       const tweet = await client.v2.tweetThread([
-        { text: tweetText, media: { media_ids: [mediaId] } },
+        { text: this.textPost, media: { media_ids: [mediaId] } },
       ]);
 
       // Devolver el tweet como respuesta
@@ -34,6 +32,34 @@ export class AppController {
     } catch (error) {
       // Manejar errores
       console.error('Error al publicar el tweet:', error);
+      throw error;
+    }
+  }
+
+  @Get('facebookPost')
+  async getPostFacebook(): Promise<string> {
+    try {
+      // Establecer el token de acceso
+      FB.setAccessToken('YOUR_TOKEN'); 
+
+      // Crear una promesa para envolver la llamada a FB.api()
+      const postPromise = new Promise<string>((resolve, reject) => {
+        FB.api('me/photos', 'post', { source: fs.createReadStream('test.jpg'), caption: this.textPost }, (res) => {
+          if (!res || res.error) {
+            console.error(!res ? 'Error occurred' : res.error);
+            reject(!res ? 'Error occurred' : res.error);
+          } else {
+            console.log('Post Id: ' + res.post_id);
+            resolve(res.post_id);
+          }
+        });
+      });
+
+      // Esperar a que se resuelva la promesa y devolver el resultado
+      return await postPromise;
+    } catch (error) {
+      // Manejar errores
+      console.error('Error al publicar el post:', error);
       throw error;
     }
   }
